@@ -18,7 +18,7 @@ pub trait Relation: Hash + Eq + Debug {
     type Item: Item;
     // returns a Vector of (location to update, allowed items)
     // for this relation
-    fn related(&self, to: &Self::Item, at: &Self::Loc) -> HashMap<Self::Loc, HashSet<Self::Item>>;
+    fn related(&self, at: &Self::Loc) -> HashMap<Self::Loc, HashSet<Self::Item>>;
 }
 
 /// WaveFunctionCollapse maintains state for the wave function collapse function
@@ -85,7 +85,7 @@ where
             choices.iter().for_each(|choice| {
                 self.relations.get(&choice).map(|rels| {
                     rels.iter().for_each(|rel| {
-                        rel.related(&choice, &l).iter().for_each(|(&l, allowed)| {
+                        rel.related(&l).iter().for_each(|(&l, allowed)| {
                             effects.entry(l).or_insert(HashSet::new()).extend(allowed)
                         })
                     })

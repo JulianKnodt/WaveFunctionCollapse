@@ -1,9 +1,16 @@
-use wfc::{grid::Grid, rels::get_2d_rels, WaveFunctionCollapse};
+use wfc::{
+    rels::get_2d_rels,
+    util::{flatten, generate_2d_positions},
+    WaveFunctionCollapse,
+};
 
 fn main() {
-    let n = 50;
-    let locs: Vec<(usize, usize)> = (0..n).flat_map(|i| (0..n).map(move |j| (i, j))).collect();
+    let (width, height) = (50, 10);
+    let locs = generate_2d_positions(width, height);
     let example = vec![
+        vec![0, 0, 0, 0],
+        vec![0, 0, 0, 0],
+        vec![0, 0, 0, 0],
         vec![0, 0, 0, 0],
         vec![0, 0, 0, 0],
         vec![0, 0, 0, 0],
@@ -19,14 +26,16 @@ fn main() {
         match wfc.observe() {
             Ok(()) => (),
             Err(e) => {
-                println!();
-                let g = Grid::new(n, wfc.get_partial());
-                g.display_partial();
                 println!("{:?}", e);
                 return;
             }
         }
     }
-    let g = Grid::new(n, wfc.get_collapsed().unwrap());
-    g.display();
+    let flat = flatten(wfc.get_collapsed().unwrap());
+    (0..height).for_each(|y| {
+        (0..width).for_each(|x| {
+            print!("{} ", flat[x * height + y]);
+        });
+        println!();
+    });
 }
