@@ -20,8 +20,8 @@ fn main() {
         vec![2, 2, 2, 2],
     ];
     let relations = get_2d_rels(&example);
-    let mut wfc =
-        WaveFunctionCollapse::new(locs, example.iter().flatten().copied().collect(), relations);
+    let items = example.iter().flatten().copied().collect();
+    let mut wfc = WaveFunctionCollapse::new(locs, items, relations);
     while !wfc.is_fully_collapsed() {
         match wfc.observe() {
             Ok(()) => (),

@@ -30,6 +30,16 @@ impl Dir2D {
             .filter_map(|d| d.step(x, y).map(|loc2d| (d, loc2d)))
             .collect()
     }
+    pub fn opp(&self) -> Self {
+        use Dir2D::*;
+        match self {
+            Up => Down,
+            Down => Up,
+
+            Right => Left,
+            Left => Right,
+        }
+    }
 }
 
 impl<T: Item> Relation for (T, Dir2D) {
@@ -61,9 +71,7 @@ pub fn get_2d_rels<T: Item>(items: &Vec<Vec<T>>) -> HashMap<T, HashSet<(T, Dir2D
                     .map(|&i| allowed.insert((i, dir)));
             });
 
-            out.entry(*i)
-                .or_insert_with(|| HashSet::new())
-                .extend(allowed);
+            out.entry(*i).or_insert_with(HashSet::new).extend(allowed);
         })
     });
     out

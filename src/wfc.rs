@@ -4,9 +4,6 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::hash::Hash;
 
-// Possible optimization:
-// BinaryHeap for caching entropies
-
 pub trait Location: Eq + Hash + Copy + Debug {}
 impl<T> Location for T where T: Eq + Hash + Copy + Debug {}
 
@@ -27,7 +24,6 @@ pub struct WaveFunctionCollapse<Loc: Location, T: Item, Rel: Relation<Loc = Loc,
     possibilities: HashMap<Loc, HashSet<T>>,
     relations: HashMap<T, HashSet<Rel>>,
     frequencies: HashMap<T, f64>,
-    location_set: Vec<Loc>,
 }
 
 impl<Loc, T, Rel> WaveFunctionCollapse<Loc, T, Rel>
@@ -51,7 +47,6 @@ where
             possibilities,
             relations,
             frequencies,
-            location_set: locs,
         }
     }
 
@@ -76,17 +71,16 @@ where
     pub fn propogate(&mut self, start: &Loc) -> Result<(), Loc> {
         let mut changed = vec![*start];
         while let Some(l) = changed.pop() {
-            let choices = match self.possibilities.get(&l) {
-                Some(c) => c,
-                None => return Err(l),
-            };
             // get all effects from these set of choices
             let mut effects: HashMap<Loc, HashSet<T>> = HashMap::new();
-            choices.iter().for_each(|choice| {
-                self.relations.get(&choice).map(|rels| {
+            // must take the & over possibilities but | with relations
+            self.possibilities[&l].iter().for_each(|poss| {
+                self.relations.get(&poss).map(|rels| {
                     rels.iter().for_each(|rel| {
-                        rel.related(&l).iter().for_each(|(&l, allowed)| {
-                            effects.entry(l).or_insert(HashSet::new()).extend(allowed)
+                        rel.related(&l).drain().for_each(|(l, allowed)| {
+                         effects.entry(l)
+                          .or_insert_with(HashSet::new)
+                          .extend(allowed);
                         })
                     })
                 });
@@ -94,12 +88,15 @@ where
 
             for (loc, permitted) in effects {
                 match self.possibilities.get_mut(&loc) {
+                    // To easily ignore edges
                     None => continue,
                     Some(prev_posses) => {
                         let inter: HashSet<T> =
-                            prev_posses.intersection(&permitted).cloned().collect();
+                            prev_posses.intersection(&permitted).copied().collect();
                         if inter.is_empty() {
                             return Err(loc);
+                        // can just check length because if they differ they will have different
+                        // contents
                         } else if inter.len() != prev_posses.len() {
                             changed.push(loc)
                         }
@@ -122,6 +119,26 @@ where
                     .sum::<f64>()
             })
     }
+    /// returns the index into the location set of what should be used for the next
+    /// collapsed location.
+    fn next_collapse(&self) -> &Loc {
+        self.possibilities
+            .keys()
+            .filter(|l| self.possibilities[l].len() > 1)
+            .map(|l| (l, self.shannon_entropy_at(l)))
+            .min_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
+            .unwrap()
+            .0
+    }
+
+    /// collapses the location with the lowest shannon entropy
+    /// returns Ok if success or Err or if reached invalid state
+    pub fn observe(&mut self) -> Result<(), Loc> {
+        let loc = *self.next_collapse();
+        self.collapse_at(&loc);
+        self.propogate(&loc)
+    }
+
     pub fn is_fully_collapsed(&self) -> bool {
         self.possibilities.values().all(|posses| posses.len() == 1)
     }
@@ -154,25 +171,4 @@ where
             .collect()
     }
 
-    /// returns the index into the location set of what should be used for the next
-    /// collapsed location.
-    fn next_collapse_index(&self) -> usize {
-        self.location_set
-            .iter()
-            .enumerate()
-            .filter(|(_, l)| self.possibilities[l].len() > 1)
-            // TODO add randomness to selection
-            .map(|(i, l)| (i, self.shannon_entropy_at(l)))
-            .min_by(|(_, a_ent), (_, b_ent)| a_ent.partial_cmp(b_ent).unwrap())
-            .unwrap()
-            .0
-    }
-
-    /// collapses the location with the lowest shannon entropy
-    /// returns Ok if success or Err or if reached invalid state
-    pub fn observe(&mut self) -> Result<(), Loc> {
-        let loc = self.location_set[self.next_collapse_index()];
-        self.collapse_at(&loc);
-        self.propogate(&loc)
-    }
 }
