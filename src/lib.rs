@@ -10,3 +10,5 @@ pub mod rels;
 pub mod symmetry;
 
 pub mod util;
+
+pub mod tiles;

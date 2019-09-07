@@ -9,3 +9,5 @@ edition = "2018"
 [dependencies]
 rand = "0.7"
 image = "0.22.1"
+cpuprofiler = "0.0.3"
+

@@ -45,16 +45,11 @@ impl Dir2D {
 impl<T: Item> Relation for (T, Dir2D) {
     type Loc = (usize, usize);
     type Item = T;
-    fn related(&self, at: &(usize, usize)) -> HashMap<Self::Loc, HashSet<T>> {
-        let mut out = HashMap::new();
+    fn add_related(&self, at: &(usize, usize), into: &mut HashMap<Self::Loc, HashSet<T>>) {
         let &(x, y) = at;
         let &(v, dir) = self;
-        dir.step(x, y).map(|pos| {
-            let mut just = HashSet::new();
-            just.insert(v);
-            out.insert(pos, just);
-        });
-        out
+        dir.step(x, y)
+            .map(|pos| into.entry(pos).or_insert_with(HashSet::new).insert(v));
     }
 }
 
@@ -75,4 +70,21 @@ pub fn get_2d_rels<T: Item>(items: &Vec<Vec<T>>) -> HashMap<T, HashSet<(T, Dir2D
         })
     });
     out
+}
+
+impl<T: Item> Relation for (T, (i32, i32)) {
+    type Loc = (usize, usize);
+    type Item = T;
+    fn add_related(&self, at: &(usize, usize), into: &mut HashMap<Self::Loc, HashSet<T>>) {
+        use std::convert::TryFrom;
+        use std::usize;
+        let &(x, y) = at;
+        let (dx, dy) = self.1;
+        usize::try_from(dx + (x as i32))
+            .and_then(|ox| usize::try_from(dy + (y as i32)).map(|oy| (ox, oy)))
+            .ok()
+            .map(|pos| {
+                into.entry(pos).or_insert_with(HashSet::new).insert(self.0);
+            });
+    }
 }

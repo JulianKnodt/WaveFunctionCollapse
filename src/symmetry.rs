@@ -27,6 +27,9 @@ impl Rot {
     pub fn up_to(v: usize) -> Vec<Rot> {
         (0..v).step_by(90).map(|deg| Rot(deg)).collect()
     }
+    pub const fn all() -> [Rot; 4] {
+        [DEG_0, DEG_90, DEG_180, DEG_270]
+    }
 }
 
 #[test]
