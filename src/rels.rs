@@ -88,3 +88,19 @@ impl<T: Item> Relation for (T, (i32, i32)) {
             });
     }
 }
+
+impl<T: Item> Relation for (T, (i32, i32, i32)) {
+    type Loc = (usize, usize, usize);
+    type Item = T;
+    fn add_related(&self, at: &(usize, usize, usize), into: &mut HashMap<Self::Loc, HashSet<T>>) {
+        use std::convert::TryFrom;
+        use std::usize;
+        let &(x, y, z) = at;
+        let (dx, dy, dz) = self.1;
+        usize::try_from(dx + (x as i32))
+            .and_then(|ox| usize::try_from(dy + (y as i32)).map(|oy| (ox, oy)))
+            .and_then(|(ox, oy)| usize::try_from(dz + (z as i32)).map(|oz| (ox, oy, oz)))
+            .ok()
+            .map(|pos| into.entry(pos).or_insert_with(HashSet::new).insert(self.0));
+    }
+}

@@ -81,6 +81,7 @@ where
     }
 }
 
+/// Possible Errors from WaveFunctionCollapse, might change in the future
 #[derive(Clone, Debug)]
 pub enum WaveErrors<L> {
     InvalidLocations(Vec<L>),
@@ -175,6 +176,8 @@ where
         }
     }
 
+    /// Gets the entropy for a specific location from the cache
+    /// Or calculates it and caches.
     pub fn entropy_else_get(&self, l: &Loc) -> f64 {
         *self
             .entropy_cache

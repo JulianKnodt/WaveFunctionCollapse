@@ -11,17 +11,17 @@ use wfc::{
 };
 
 fn main() {
-    let img_path = "./samples/monster.png";
+    let img_path = "./samples/lake.png";
     let img = open(img_path).expect("Failed to open image");
     let imgs = [
-        // (img.clone().rotate90(), DEG_90),
-        // (img.clone().rotate180(), DEG_180),
-        // (img.clone().rotate270(), DEG_270),
+        (img.clone().rotate90(), DEG_90),
+        (img.clone().rotate180(), DEG_180),
+        (img.clone().rotate270(), DEG_270),
         (img, DEG_0),
     ];
 
     // raw pixel outputs
-    let (w, h) = (50, 50);
+    let (w, h) = (100, 100);
     let locs = generate_2d_positions(w as usize, h as usize);
     let n = 3u32;
     let mut tiles: HashMap<_, SubImage<_>> = HashMap::new();

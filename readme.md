@@ -32,6 +32,11 @@ Another way to make it tractable might be to create large tiles which are compat
 other, and combine those in a recursive fashion until the end result is a desired size. Each
 step of the process will be independent except for combining, so that might be efficient.
 
+## Potential Future Works
+Is it possible that there is some way to represent the each of the tiles as an SMT constraint?
+I.e. can we put a solution into a more general SMT solver and generate a solution? How
+complicated would such a formulae be? If this problem is NP-Complete, it should be reducible...
+
 ## Credit
 
 Credit to `mxgmn` for the algorithm, as well as all the samples. In addition, a lot of my
