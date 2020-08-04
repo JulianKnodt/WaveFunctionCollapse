@@ -1,7 +1,6 @@
-use crate::wfc::{Item, Relation};
-use std::collections::{HashMap, HashSet};
+use crate::wfc::Relation;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum Dir2D {
   Up,
   Left,
@@ -9,18 +8,18 @@ pub enum Dir2D {
   Down,
 }
 
-const ALL_DIRS: [Dir2D; 4] = [Dir2D::Up, Dir2D::Down, Dir2D::Left, Dir2D::Right];
+pub const ALL_DIRS: [Dir2D; 4] = [Dir2D::Up, Dir2D::Down, Dir2D::Left, Dir2D::Right];
 
 impl Dir2D {
   pub fn step(self, x: usize, y: usize) -> Option<(usize, usize)> {
     use Dir2D::*;
     let v = match self {
-      Right => (x + 1, y),
       Left if x == 0 => return None,
-      Left => (x - 1, y),
-
-      Up => (x, y + 1),
       Down if y == 0 => return None,
+
+      Right => (x + 1, y),
+      Left => (x - 1, y),
+      Up => (x, y + 1),
       Down => (x, y - 1),
     };
     Some(v)
@@ -43,37 +42,46 @@ impl Dir2D {
   }
 }
 
-impl<T: Item> Relation for (T, Dir2D) {
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Neighbor2D<T> {
+  allowed: T,
+  direction: Dir2D,
+}
+
+impl<T> Neighbor2D<T> {
+  pub fn new(allowed: T, direction: Dir2D) -> Self { Self { allowed, direction } }
+}
+
+impl<T: Copy + std::fmt::Debug> Relation for Neighbor2D<T> {
   type Loc = (usize, usize);
   type Item = T;
-  fn add_related(&self, at: &(usize, usize), into: &mut HashMap<Self::Loc, HashSet<T>>) {
-    let &(x, y) = at;
-    let &(v, dir) = self;
-    dir
-      .step(x, y)
-      .map(|pos| into.entry(pos).or_insert_with(HashSet::new).insert(v));
+
+  fn related(&self, (x, y): Self::Loc, mut f: impl FnMut(Self::Loc, Self::Item)) {
+    if let Some(p) = self.direction.step(x, y) {
+      f(p, self.allowed)
+    }
   }
 }
 
-pub fn get_2d_rels<T: Item>(items: &[Vec<T>]) -> HashMap<T, HashSet<(T, Dir2D)>> {
-  let mut out = HashMap::new();
-  items.iter().enumerate().for_each(|(y, row)| {
-    row.iter().enumerate().for_each(|(x, i)| {
-      let mut allowed = HashSet::new();
-
-      Dir2D::iter(x, y).for_each(|(dir, (nx, ny))| {
-        items
-          .get(ny)
-          .and_then(|row| row.get(nx))
-          .map(|&i| allowed.insert((i, dir)));
-      });
-
-      out.entry(*i).or_insert_with(HashSet::new).extend(allowed);
+pub fn get_2d_rels<T: Copy>(
+  items: &[Vec<T>],
+) -> impl Iterator<Item = (T, Vec<Neighbor2D<T>>)> + '_ {
+  items.iter().enumerate().flat_map(move |(y, row)| {
+    row.iter().enumerate().map(move |(x, &i)| {
+      let dirs = Dir2D::iter(x, y)
+        .filter_map(move |(dir, (nx, ny))| {
+          items
+            .get(ny)
+            .and_then(|row| row.get(nx))
+            .map(|&i| Neighbor2D::new(i, dir))
+        })
+        .collect();
+      (i, dirs)
     })
-  });
-  out
+  })
 }
 
+/*
 impl<T: Item> Relation for (T, (i32, i32)) {
   type Loc = (usize, usize);
   type Item = T;
@@ -103,3 +111,4 @@ impl<T: Item> Relation for (T, (i32, i32, i32)) {
       .map(|pos| into.entry(pos).or_insert_with(HashSet::new).insert(self.0));
   }
 }
+*/

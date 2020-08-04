@@ -1,8 +1,4 @@
-use wfc::{
-  rels::get_2d_rels,
-  util::{flatten, generate_2d_positions},
-  WaveFunctionCollapse,
-};
+use wfc::{rels::get_2d_rels, util::generate_2d_positions, WaveFunctionCollapse};
 
 fn main() {
   let (width, height) = (50, 10);
@@ -30,10 +26,15 @@ fn main() {
       },
     }
   }
-  let flat = flatten(wfc.get_collapsed().unwrap());
+  let mut flat = wfc
+    .get_collapsed()
+    .unwrap()
+    .map(|v| v.1)
+    .collect::<Vec<_>>();
+  flat.sort_unstable();
   (0..height).for_each(|y| {
     (0..width).for_each(|x| {
-      print!("{} ", flat[x * height + y]);
+      print!("{} ", flat[(x * height + y) as usize]);
     });
     println!();
   });

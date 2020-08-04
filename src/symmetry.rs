@@ -1,5 +1,7 @@
 /// Rotations in degrees
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(
+  Clone, Copy, Debug, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize, PartialOrd, Ord,
+)]
 pub struct Rot(usize);
 // Right
 pub const DEG_0: Rot = Rot(0);
@@ -18,7 +20,7 @@ impl Rot {
     Rot((dest - self.0) % card)
   }
   pub const fn rot_90_n(self, card: usize, n: usize) -> Self { Rot((self.0 + 90 * n) % card) }
-  pub fn up_to(v: usize) -> Vec<Rot> { (0..v).step_by(90).map(Rot).collect() }
+  pub fn up_to(v: usize) -> impl Iterator<Item = Rot> { (0..v).step_by(90).map(Rot) }
   pub const fn all() -> [Rot; 4] { [DEG_0, DEG_90, DEG_180, DEG_270] }
 }
 
@@ -39,3 +41,5 @@ fn rot_90_n() {
   assert_eq!(DEG_0.rot_90_n(360, 0), DEG_0);
   assert_eq!(DEG_0.rot_90_n(360, 1), DEG_90);
 }
+
+// TODO add a symmetry which is flipped x and flipped y and rotated

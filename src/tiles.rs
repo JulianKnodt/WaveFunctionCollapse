@@ -7,17 +7,24 @@ use std::{
   hash::Hash,
 };
 
-#[derive(Clone, Debug)]
-pub struct TileDesc<T: Hash + Copy + Eq> {
-  cardinality: usize,
-  desc: HashMap<T, Vec<Rot>>,
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct TileDesc<T: Eq + Hash> {
+  // How many symmetries are there?
+  pub cardinality: usize,
+  // Side type -> Rotations
+  pub desc: HashMap<T, Vec<Rot>>,
 }
 
-impl<T: Hash + Copy + Eq, I: IntoIterator<Item = (T, Vec<Rot>)>> From<(usize, I)> for TileDesc<T> {
-  fn from(f: (usize, I)) -> Self {
+impl<T> TileDesc<T>
+where
+  T: Eq + Hash,
+{
+  pub fn new(cardinality: usize, desc: impl IntoIterator<Item = (T, Vec<Rot>)>) -> Self
+  where
+    T: Hash + Eq, {
     Self {
-      cardinality: f.0,
-      desc: f.1.into_iter().collect(),
+      cardinality,
+      desc: desc.into_iter().collect(),
     }
   }
 }
@@ -34,11 +41,10 @@ where
 {
   /// returns all possible tile configurations for this description
   pub fn items(&self) -> impl Iterator<Item = (K, Rot)> + '_ {
-    self.tiles.iter().flat_map(|(&name, desc)| {
-      Rot::up_to(desc.cardinality)
-        .into_iter()
-        .map(move |r| (name, r))
-    })
+    self
+      .tiles
+      .iter()
+      .flat_map(|(&name, desc)| Rot::up_to(desc.cardinality).map(move |r| (name, r)))
   }
   pub fn rels(&self) -> HashMap<(K, Rot), HashSet<((K, Rot), Dir2D)>> {
     let mut out = HashMap::new();

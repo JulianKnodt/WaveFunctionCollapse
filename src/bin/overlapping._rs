@@ -22,7 +22,7 @@ fn main() {
 
   // raw pixel outputs
   let (w, h) = (100, 100);
-  let locs = generate_2d_positions(w as usize, h as usize);
+  let locs = generate_2d_positions(w, h);
   let n = 3u32;
   let mut tiles: HashMap<_, SubImage<_>> = HashMap::new();
 
@@ -89,11 +89,11 @@ fn main() {
   let mut out = DynamicImage::new_rgba8(w + n, h + n);
   waves
     .get_partial()
-    .drain()
     .filter_map(|(k, v)| v.map(|v| (k, v)))
     .for_each(|((x, y), pos)| {
       out.copy_from(&tiles[&pos], x as u32, y as u32);
     });
+
   out
     .save(format!("ol_{}_{}.png", w, h))
     .expect("failed to save output");
